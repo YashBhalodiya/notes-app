@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "@react-native-vector-icons/ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -16,19 +17,71 @@ export default function NoteListScreen() {
   const [notes, setNotes] = useState([]);
 
   useEffect(() => {
-  if (title && description) {
-    const newNote = {
-      title: title.toString(),
-      content: description.toString(),
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
-    }
-    const alreadyExists = notes.some(note=> note.title === newNote.title && note.content=== newNote.content)
-    if (!alreadyExists) {
-      setNotes(prevNotes => [...prevNotes, newNote]);
+    loadNotes();
+  }, []);
+
+  const loadNotes = async () =>{
+    try {
+      const savedNotes = await AsyncStorage.getItem('notes');
+      if (savedNotes) {
+        setNotes(JSON.parse(savedNotes));
+      }
+    } catch (error) {
+      console.log("Error loading notes:", error);
     }
   }
-  }, [title, description])
+
+  const saveNotes = async () => {
+    try {
+      await AsyncStorage.setItem('notes', JSON.stringify(notes));
+    } catch (error) {
+      console.log("Error saving notes:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (title && description) {
+      console.log("Received params:", { title, description });
+      addNewNote(title.toString(), description.toString());
+    }
+  }, [title, description]);
+
+  const addNewNote = async (noteTitle, noteContent) => {
+    try {
+      const newNote = {
+        id: Date.now().toString(),
+        title: noteTitle,
+        content: noteContent,
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+      }
+      
+      // Get current notes from AsyncStorage to ensure we have the latest
+      const savedNotes = await AsyncStorage.getItem('notes');
+      const currentNotes = savedNotes ? JSON.parse(savedNotes) : [];
+      
+      console.log("Current notes from storage:", currentNotes.length);
+      
+      const alreadyExists = currentNotes.some(note => 
+        note.title === newNote.title && note.content === newNote.content
+      );
+      
+      if (!alreadyExists) {
+        const updatedNotes = [...currentNotes, newNote];
+        console.log("Adding new note. Total notes:", updatedNotes.length);
+        
+        // Save to AsyncStorage first
+        await AsyncStorage.setItem('notes', JSON.stringify(updatedNotes));
+        
+        // Then update state
+        setNotes(updatedNotes);
+      } else {
+        console.log("Note already exists, not adding");
+      }
+    } catch (error) {
+      console.log("Error adding note:", error);
+    }
+  };
 
   const renderNoteItem = ({ item }) => (
     <View style={styles.noteItem}>
@@ -57,7 +110,7 @@ export default function NoteListScreen() {
           name="add"
           size={50}
           style={{ position: "absolute", bottom: 20, right: 20, zIndex: 1, borderRadius: 30, backgroundColor: "#007AFF", padding: 8, color: "#fff" }}
-          onPress={() => router.push("/AddNoteScreen")}
+          onPress={() => router.replace("/AddNoteScreen")}
         />
         {
         notes.length === 0 && (
@@ -72,6 +125,7 @@ export default function NoteListScreen() {
         <FlatList
           data={notes}
           renderItem={renderNoteItem}
+          keyExtractor={(item, index) => item.id || index.toString()}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
