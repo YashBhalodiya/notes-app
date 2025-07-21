@@ -12,6 +12,7 @@ import FloatingActionButton from "../../../components/ui/FloatingActionButton";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import SearchBar from "../../../components/ui/SearchBar";
 import AddNoteModal from "../components/AddNoteModal";
+import EditNoteModal from "../components/EditNoteModal"; // Import your new EditNoteModal
 import NoteItem from "../components/NoteItem";
 
 const NoteListScreen = () => {
@@ -24,13 +25,14 @@ const NoteListScreen = () => {
   } = useSearch(notes, ["title", "content"]);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [shouldOpenModal, setShouldOpenModal] = useState(false);
 
-  // Effect to open modal after editingNote is set
+  // Effect to open edit modal after editingNote is set
   useEffect(() => {
     if (shouldOpenModal && editingNote) {
-      setIsModalVisible(true);
+      setIsEditModalVisible(true);
       setShouldOpenModal(false);
     }
   }, [editingNote, shouldOpenModal]);
@@ -84,19 +86,29 @@ const NoteListScreen = () => {
 
   const closeModal = useCallback(() => {
     setIsModalVisible(false);
+    setEditingNote(null);
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setIsEditModalVisible(false);
     setShouldOpenModal(false);
     setEditingNote(null);
   }, []);
 
   const handleModalSave = useCallback(
     async (title, content) => {
+      await handleAddNote(title, content);
+    },
+    [handleAddNote]
+  );
+
+  const handleEditModalSave = useCallback(
+    async (title, content) => {
       if (editingNote) {
         await handleEditNote(title, content);
-      } else {
-        await handleAddNote(title, content);
       }
     },
-    [editingNote, handleEditNote, handleAddNote]
+    [editingNote, handleEditNote]
   );
 
   const renderNoteItem = useCallback(
@@ -157,6 +169,12 @@ const NoteListScreen = () => {
         visible={isModalVisible}
         onClose={closeModal}
         onSave={handleModalSave}
+      />
+
+      <EditNoteModal
+        visible={isEditModalVisible}
+        onClose={closeEditModal}
+        onSave={handleEditModalSave}
         editingNote={editingNote}
       />
     </SafeAreaView>

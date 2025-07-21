@@ -9,7 +9,6 @@ const NoteItem = memo(({
   onEdit,
   showActions = false 
 }) => {
-  // Different background colors for variety (like in the image)
   const backgroundColors = [
     '#E3F2FD', // Light blue
     '#FFF3E0', // Light orange
