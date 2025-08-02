@@ -7,7 +7,7 @@
     "icon": "./src/assets/images/notes-app.png",
     "scheme": "notesapp",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    // "newArchEnabled": false,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.yashpatel25.notesapp"
@@ -17,9 +17,7 @@
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yashpatel25.notesapp",
-      "enableProguardInReleaseBuilds": true,
-      "enableSeparateBuildPerCPUArchitecture": true
+      "package": "com.yashpatel25.notesapp"
     },
     "plugins": [
       "expo-router"

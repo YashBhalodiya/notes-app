@@ -12,11 +12,13 @@ import FloatingActionButton from "../../../components/ui/FloatingActionButton";
 import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import SearchBar from "../../../components/ui/SearchBar";
 import AddNoteModal from "../components/AddNoteModal";
-import EditNoteModal from "../components/EditNoteModal"; // Import your new EditNoteModal
+import EditNoteModal from "../components/EditNoteModal";
 import NoteItem from "../components/NoteItem";
 
 const NoteListScreen = () => {
   const { notes, loading, addNote, deleteNote, updateNote } = useNotes();
+  
+  // Simple search functionality
   const {
     searchQuery,
     setSearchQuery,
@@ -29,7 +31,6 @@ const NoteListScreen = () => {
   const [editingNote, setEditingNote] = useState(null);
   const [shouldOpenModal, setShouldOpenModal] = useState(false);
 
-  // Effect to open edit modal after editingNote is set
   useEffect(() => {
     if (shouldOpenModal && editingNote) {
       setIsEditModalVisible(true);
