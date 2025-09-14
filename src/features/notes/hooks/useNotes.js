@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
+import db from '../../../../firebase';
 
 const STORAGE_KEY = 'notes';
 
@@ -60,10 +62,20 @@ export const useNotes = () => {
     if (alreadyExists) {
       throw new Error("A note with this title and content already exists");
     }
+
+    // Add individual note to Firestore using v9+ syntax
+    try {
+      const noteRef = doc(db, 'notes', newNote.id);
+      await setDoc(noteRef, newNote);
+      console.log("Note added to Firestore with ID:", newNote.id);
+    } catch (firestoreError) {
+      console.log("Error adding note to Firestore:", firestoreError);
+      // Continue with local storage even if Firestore fails
+    }
     
     const updatedNotes = [...currentNotes, newNote];
-    await saveNotesToStorage(updatedNotes);
-    setNotes(updatedNotes);
+    await saveNotesToStorage(updatedNotes);  // for local storage
+    setNotes(updatedNotes);  // render it on the screen
     
     console.log("New note added successfully. Total notes:", updatedNotes.length);
     return newNote;
@@ -71,6 +83,15 @@ export const useNotes = () => {
 
   const deleteNote = useCallback(async (noteId) => {
     try {
+      try {
+        const noteRef = doc(db, 'notes', noteId);
+        await deleteDoc(noteRef);
+        console.log("Note deleted from Firestore with ID:", noteId);
+      } catch (firestoreError) {
+        console.log("Error deleting note from Firestore:", firestoreError);
+        // Continue with local deletion even if Firestore fails
+      }
+
       const updatedNotes = notes.filter(note => note.id !== noteId);
       await saveNotesToStorage(updatedNotes);
       setNotes(updatedNotes);
@@ -83,16 +104,26 @@ export const useNotes = () => {
 
   const updateNote = useCallback(async (noteId, title, content) => {
     try {
+      const updatedNote = {
+        id: noteId,
+        title: title.trim(), 
+        content: content.trim(),
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+      };
+
+      // Update in Firestore first
+      try {
+        const noteRef = doc(db, 'notes', noteId);
+        await setDoc(noteRef, updatedNote);
+        console.log("Note updated in Firestore with ID:", noteId);
+      } catch (firestoreError) {
+        console.log("Error updating note in Firestore:", firestoreError);
+        // Continue with local update even if Firestore fails
+      }
+
       const updatedNotes = notes.map(note => 
-        note.id === noteId 
-          ? { 
-              ...note, 
-              title: title.trim(), 
-              content: content.trim(),
-              date: new Date().toISOString().split('T')[0],
-              time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
-            }
-          : note
+        note.id === noteId ? updatedNote : note
       );
       await saveNotesToStorage(updatedNotes);
       setNotes(updatedNotes);
